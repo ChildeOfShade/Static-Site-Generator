@@ -59,3 +59,34 @@ def text_node_to_html_node(text_node):
 
     else:
         raise Exception(f"Unknown TextType: {t}")
+
+def split_nodes_delimiter(old_nodes, delimiter, text_type):
+    new_nodes = []
+
+    for node in old_nodes:
+        # Only split raw TEXT nodes — leave others unchanged
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
+
+        # If delimiter not present → no splitting needed
+        if delimiter not in node.text:
+            new_nodes.append(node)
+            continue
+
+        # Split the text by delimiter
+        split_text = node.text.split(delimiter)
+
+        # If we don't have an even number of delimiters → missing closing tag
+        if len(split_text) % 2 == 0:
+            raise Exception(f"Invalid markdown, no closing delimiter for {delimiter}")
+
+        # Build new nodes — alternate TEXT, special, TEXT, special, ...
+        for i, chunk in enumerate(split_text):
+            if i % 2 == 0:  # even index = normal text
+                if chunk:
+                    new_nodes.append(TextNode(chunk, TextType.TEXT))
+            else:           # odd index = formatted text
+                new_nodes.append(TextNode(chunk, text_type))
+
+    return new_nodes
